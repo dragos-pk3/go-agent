@@ -1,0 +1,10 @@
+# Exclude Git repository files
+.git/
+.gitignore
+
+# Exclude Python cache files
+__pycache__/
+*.pyc
+
+# Exclude other unnecessary files
+.DS_Store
