@@ -163,5 +163,6 @@ cython_debug/
 
 
 # unit-dm
-userfiles/
+__userfiles__/
 __env__/
+db/
