@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QDateEdit, QComboBox, QTextEdit, QPushButton
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QDateEdit, QComboBox, QTextEdit, QPushButton, QHBoxLayout, QLabel, QSpacerItem, QSizePolicy
 from PyQt5.QtCore import QDate
 import sqlite3
 import sys
@@ -16,24 +16,39 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.html_replacer = HTMLReplacer()
 
-        self.setWindowTitle("Autovan Picker")
+        self.setWindowTitle("GoCamper Oferte")
 
         # Create main layout
         layout = QVBoxLayout()
-
+        horizontal_spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        # Create a widget to hold the start date layout
+        start_date_widget = QWidget()
+        startDateLayout = QHBoxLayout(start_date_widget)
+        self.start_date_label = QLabel(self)
+        self.start_date_label.setText("Start Date: ")
         # Start date picker
         self.start_date_picker = QDateEdit(self)
         self.start_date_picker.setCalendarPopup(True)
         self.start_date_picker.setDate(QDate.currentDate())
         self.start_date_picker.setDisplayFormat("dd.MM")
-        layout.addWidget(self.start_date_picker)
+        startDateLayout.addWidget(self.start_date_label)
+        startDateLayout.addWidget(self.start_date_picker)
+        startDateLayout.addItem(horizontal_spacer)
+        layout.addWidget(start_date_widget)
 
+        end_date_widget = QWidget() 
+        endDateLayout = QHBoxLayout(end_date_widget)
+        self.end_date_label = QLabel(self)
+        self.end_date_label.setText("End Date: ")
         # End date picker
         self.end_date_picker = QDateEdit(self)
         self.end_date_picker.setCalendarPopup(True)
-        self.end_date_picker.setDate(QDate.currentDate())
+        self.end_date_picker.setDate(QDate.currentDate().addDays(3))
         self.end_date_picker.setDisplayFormat("dd.MM")
-        layout.addWidget(self.end_date_picker)
+        endDateLayout.addWidget(self.end_date_label)
+        endDateLayout.addWidget(self.end_date_picker)
+        endDateLayout.addItem(horizontal_spacer)
+        layout.addWidget(end_date_widget)
 
         # ComboBox for Autorulota picker
         self.autovan_combo_box = QComboBox(self)
@@ -59,7 +74,14 @@ class MainWindow(QMainWindow):
         data = jsonSRW.read_json("__userfiles__\\user_config.json")
         conn = sqlite3.connect(data["DB_PATH"])
         cursor = conn.cursor()
-        cursor.execute("SELECT vehicle_id, autovan_type, location_city FROM VehiclesSummary")
+        
+        # Modified query to get distinct combinations of type and city
+        cursor.execute("""
+            SELECT MIN(vehicle_id) as vehicle_id, autovan_type, location_city 
+            FROM VehiclesSummary 
+            GROUP BY autovan_type, location_city
+        """)
+        
         rows = cursor.fetchall()
         for row in rows:
             self.autovan_combo_box.addItem(f"{row[1]} - {row[2]}", row[0])
@@ -70,7 +92,6 @@ class MainWindow(QMainWindow):
         end_date = self.end_date_picker.date().toString("dd.MM")
         selected_autovan = self.autovan_combo_box.currentText().split(" - ")[0]
         vehicle_id = self.autovan_combo_box.currentData()
-        print(f"Selected Autovan: {selected_autovan}, Vehicle ID: {vehicle_id}, Start Date: {start_date}, End Date: {end_date}")
         # Process the data with the GUI values instead of using input()
         processed_data = ProcessData()
         processed_data.process(vehicle_id, start_date, end_date)

@@ -7,11 +7,12 @@ class PeriodCalculator:
 
     def calculate_days(self, start_date, end_date, current_year):
         """Calculate the number of days in each season."""
+        # TODO: make sure to extend the check for the next year
         high_start = datetime.strptime(f"{self.user_config["HIGH_START"]}.{current_year}", "%d.%m.%Y")
         high_end = datetime.strptime(f"{self.user_config["HIGH_END"]}.{current_year}", "%d.%m.%Y")
         low_start = datetime.strptime(f"{self.user_config["LOW_START"]}.{current_year}", "%d.%m.%Y")
         low_end = datetime.strptime(f"{self.user_config["LOW_END"]}.{current_year + 1}", "%d.%m.%Y")
-
+        # TODO: use coding standards for this file
         HighDays = StandardDays = LowDays = 0
 
         current_date = start_date
@@ -42,6 +43,7 @@ class PeriodCalculator:
         )
         
         total_rent = int(round(total_rent))  # Rounding and converting to integer
+        # TODO: rent_per_day should keep track of all season days and not just the most days
         if HighDays >= StandardDays and HighDays >= LowDays:
             rent_per_day = autovanPriceHigh
         elif StandardDays >= HighDays and StandardDays >= LowDays:
@@ -49,5 +51,4 @@ class PeriodCalculator:
         else:
             rent_per_day = autovanPriceLow 
 
-        print(f"Total rent: {total_rent}")
         return total_rent, rent_per_day
