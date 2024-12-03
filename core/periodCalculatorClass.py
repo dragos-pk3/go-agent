@@ -2,16 +2,16 @@ import math
 from datetime import datetime, timedelta
 
 class PeriodCalculator:
-    def __init__(self, user_config):
-        self.user_config = user_config
+    def __init__(self, user_preferences):
+        self.user_preferences = user_preferences
 
     def calculate_days(self, start_date, end_date, current_year):
         """Calculate the number of days in each season."""
         # TODO: make sure to extend the check for the next year
-        high_start = datetime.strptime(f"{self.user_config["HIGH_START"]}.{current_year}", "%d.%m.%Y")
-        high_end = datetime.strptime(f"{self.user_config["HIGH_END"]}.{current_year}", "%d.%m.%Y")
-        low_start = datetime.strptime(f"{self.user_config["LOW_START"]}.{current_year}", "%d.%m.%Y")
-        low_end = datetime.strptime(f"{self.user_config["LOW_END"]}.{current_year + 1}", "%d.%m.%Y")
+        high_start = datetime.strptime(f"{self.user_preferences["HIGH_START"]}.{current_year}", "%d.%m.%Y")
+        high_end = datetime.strptime(f"{self.user_preferences["HIGH_END"]}.{current_year}", "%d.%m.%Y")
+        low_start = datetime.strptime(f"{self.user_preferences["LOW_START"]}.{current_year}", "%d.%m.%Y")
+        low_end = datetime.strptime(f"{self.user_preferences["LOW_END"]}.{current_year + 1}", "%d.%m.%Y")
         # TODO: use coding standards for this file
         HighDays = StandardDays = LowDays = 0
 
@@ -32,17 +32,17 @@ class PeriodCalculator:
         autovanPriceStandard, autovanPriceHigh, autovanPriceLow = rates
         total_days = HighDays + StandardDays + LowDays
 
-        HighDiscount = 0.9 if total_days >= self.user_config["MIN_DAYS_HIGH"] else 1.0
-        StandardDiscount = 0.9 if total_days >= self.user_config["MIN_DAYS_STANDARD"] else 1.0
-        LowDiscount = 0.9 if total_days >= self.user_config["MIN_DAYS_LOW"] else 1.0
+        HighDiscount = 0.9 if total_days >= self.user_preferences["MIN_DAYS_HIGH"] else 1.0
+        StandardDiscount = 0.9 if total_days >= self.user_preferences["MIN_DAYS_STANDARD"] else 1.0
+        LowDiscount = 0.9 if total_days >= self.user_preferences["MIN_DAYS_LOW"] else 1.0
         total_rent = (
             math.ceil(autovanPriceHigh  * HighDiscount) * HighDays +
             math.ceil(autovanPriceStandard * StandardDiscount) * StandardDays +
             math.ceil(autovanPriceLow * LowDiscount) * LowDays +
-            self.user_config["MAINTENANCE_COST"]
+            self.user_preferences["MAINTENANCE_COST"]
         )
         
-        total_rent = int(round(total_rent))  # Rounding and converting to integer
+        total_rent = int(round(total_rent))  
         # TODO: rent_per_day should keep track of all season days and not just the most days
         if HighDays >= StandardDays and HighDays >= LowDays:
             rent_per_day = autovanPriceHigh

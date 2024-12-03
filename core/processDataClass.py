@@ -9,7 +9,7 @@ import jsonSRW
 
 class ProcessData:
     def __init__(self):
-        self.user_config = jsonSRW.read_json("__userfiles__\\user_config.json")
+        self.user_preferences = jsonSRW.read_json("__userfiles__\\user_preferences.json")
         self.output = {}
     
     def process(self, autovanIndex, startDate:str, endDate:str):
@@ -33,7 +33,7 @@ class ProcessData:
         vehicleData = dbOperations.get_vehicle_details(self.autovanIndex)
         if vehicleData is None:
             return None
-        periodCalculator = PeriodCalculator(self.user_config)
+        periodCalculator = PeriodCalculator(self.user_preferences)
         HighDays, StandardDays, LowDays = periodCalculator.calculate_days(self.startDateWithYear, self.endDateWithYear, self.startDateWithYear.year)
         total_rent, rent_per_day = periodCalculator.calculate_rent(HighDays, StandardDays, LowDays,[vehicleData['standard_rate'], vehicleData['high_rate'], vehicleData['low_rate']])
         self.output = {
@@ -44,5 +44,9 @@ class ProcessData:
             'Location': vehicleData['location_city'],
             'Rent Per Day': rent_per_day,
             'Total Rent': total_rent,
-            'Link to Photo': vehicleData['gallery_link']
+            'Link to Photo': vehicleData['gallery_link'],
+            'High Days': HighDays,
+            'Standard Days': StandardDays,
+            'Low Days': LowDays
         }
+# TODO: use coding standards for this file
