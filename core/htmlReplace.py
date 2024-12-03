@@ -27,10 +27,55 @@ class HTMLReplacer:
             'End Date': str(processed_data['End Date']),
             'Total Days': str(processed_data['Total Days']),
             'Location': str(processed_data['Location']),
-            'Rent Per Day': str(int(processed_data['Rent Per Day'])),
             'Total Rent': str(int(processed_data['Total Rent'])),
             'Link to Photo': str(processed_data['Link to Photo'])
         }
 
         template_content = self.load_template()
+        
+        rates_html = []
+        season_rates = processed_data.get('Rent Per Day', [])  # [standard, high, low]
+        discount_rates = processed_data.get('Discount Rates', [])  # [standard, high, low]
+        
+        non_zero_seasons = sum(1 for rate in season_rates if rate != 0)
+
+        if non_zero_seasons == 1:
+            if season_rates[0] != 0:
+                rates_html.append(f"Tarif standard de închiriere = <b>{int(season_rates[0])} euro / noapte </b>")
+                if discount_rates[0] != 0:
+                    rates_html.append(f"Tarif standard cu discount -10% = <b>{int(discount_rates[0])} euro / noapte </b>")
+            elif season_rates[1] != 0:
+                rates_html.append(f"Tarif standard de închiriere = <b>{int(season_rates[1])} euro / noapte </b>")
+                if discount_rates[1] != 0:
+                    rates_html.append(f"Tarif standard cu discount -10% = <b>{int(discount_rates[1])} euro / noapte </b>")
+            elif season_rates[2] != 0:
+                rates_html.append(f"Tarif standard de închiriere = <b>{int(season_rates[2])} euro / noapte </b>")
+                if discount_rates[2] != 0:
+                    rates_html.append(f"Tarif standard cu discount -10% = <b>{int(discount_rates[2])} euro / noapte </b>")
+        else:
+            # Standard season
+            if season_rates[0] != 0:
+                rates_html.append(f"Tarif sezon standard de închiriere = <b>{int(season_rates[0])} euro / noapte </b>")
+                if discount_rates[0] != 0:
+                    rates_html.append(f"Tarif sezon standard cu discount -10% = <b>{int(discount_rates[0])} euro / noapte </b>")
+
+            # High season
+            if season_rates[1] != 0:
+                rates_html.append(f"Tarif sezon de vârf de închiriere = <b>{int(season_rates[1])} euro / noapte </b>")
+                if discount_rates[1] != 0:
+                    rates_html.append(f"Tarif sezon de vârf cu discount -10% = <b>{int(discount_rates[1])} euro / noapte </b>")
+
+            # Low season
+            if season_rates[2] != 0:
+                rates_html.append(f"Tarif low season de închiriere = <b>{int(season_rates[2])} euro / noapte </b>")
+                if discount_rates[2] != 0:
+                    rates_html.append(f"Tarif low season cu discount -10% = <b>{int(discount_rates[2])} euro / noapte </b>")
+
+        rates_section = "<br>\n    ".join(rates_html)
+        
+        template_content = template_content.replace(
+            "{{Rent Per Day}}",
+            rates_section
+        )
+        
         return self.replace_placeholders(template_content, docData)

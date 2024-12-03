@@ -34,8 +34,8 @@ class ProcessData:
         if vehicleData is None:
             return None
         periodCalculator = PeriodCalculator(self.user_preferences)
-        HighDays, StandardDays, LowDays = periodCalculator.calculate_days(self.startDateWithYear, self.endDateWithYear, self.startDateWithYear.year)
-        total_rent, rent_per_day = periodCalculator.calculate_rent(HighDays, StandardDays, LowDays,[vehicleData['standard_rate'], vehicleData['high_rate'], vehicleData['low_rate']])
+        HighDays, StandardDays, LowDays = periodCalculator.calculate_days(self.startDate, self.endDate)
+        total_rent, rent_per_day, discount_rates = periodCalculator.calculate_rent(HighDays, StandardDays, LowDays,[vehicleData['standard_rate'], vehicleData['high_rate'], vehicleData['low_rate']])
         self.output = {
             'Autovan': vehicleData['autovan_type'],
             'Start Date': self.startDateWithYear.strftime("%d.%m.%Y"),
@@ -47,6 +47,6 @@ class ProcessData:
             'Link to Photo': vehicleData['gallery_link'],
             'High Days': HighDays,
             'Standard Days': StandardDays,
-            'Low Days': LowDays
+            'Low Days': LowDays,
+            'Discount Rates': discount_rates
         }
-# TODO: use coding standards for this file
