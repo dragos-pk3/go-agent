@@ -166,3 +166,4 @@ cython_debug/
 __userfiles__/
 __env__/
 db/
+__output__/

@@ -19,38 +19,46 @@ from PyQt5.QtWidgets import (
    QLineEdit,
    QMessageBox,
    QCheckBox,
+   QFileDialog,
+   QRadioButton,
+   QButtonGroup
 )
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QDate
 import sqlite3
 import sys
 import os
-
+from functools import partial
 import jsonSRW
+from datetime import datetime
 from processDataClass import ProcessData
+from docxReplace import DocxReplace
 from htmlReplace import HTMLReplacer
 icon_path = "__userfiles__\\rv.ico"
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.html_replacer = HTMLReplacer()
+        self.docx_replacer = DocxReplace()
         self.setWindowTitle("GoCamper Oferte")
         self.setWindowIcon(QIcon(icon_path))
         self.init_menu()
         self.init_tabs()
+        self.user_preferences = jsonSRW.read_json("__userfiles__\\user_preferences.json")
+        self.reload_factura_content()
 
     def init_menu(self):
         menu_bar = self.menuBar()
 
         settings_menu = menu_bar.addMenu("Settings")
 
-        preferrences_action = QAction("Preferences", self)
-        configuration_action = QAction("Configuration", self)
+        files_action = QAction("Files", self)
+        configuration_action = QAction("Preferences", self)
         
-        preferrences_action.triggered.connect(self.open_preferences_window)
+        files_action.triggered.connect(self.open_files_window)
         configuration_action.triggered.connect(self.open_configuration_window)
        
-        settings_menu.addAction(preferrences_action)
+        settings_menu.addAction(files_action)
         settings_menu.addAction(configuration_action)
     
     def init_tabs(self):
@@ -64,14 +72,77 @@ class MainWindow(QMainWindow):
         #TODO: Reservation Confirmation Tab
 
     #region Menu Actions
-    def open_preferences_window(self):
-        self.preferences_window = QWidget()
-        self.preferences_window.setWindowTitle("Preferences")
-        self.preferences_layout = QVBoxLayout()
+    def open_files_window(self):
+        self.files_window = QWidget()
+        self.files_window.setWindowTitle("Files")
+        self.files_layout = QVBoxLayout()
 
         user_config = jsonSRW.read_json("__userfiles__\\user_config.json")
 
         for key, value in user_config.items():
+            row_layout = QHBoxLayout()
+
+            label = QLabel(f"{key}:")
+            text_field = QLineEdit(str(value))
+            text_field.setObjectName(key)
+
+            browse_button = QPushButton("Browse")
+            browse_button.setObjectName(f"browse_{key}")
+            # Connect the button to a function that opens a file dialog
+            browse_button.clicked.connect(partial(self.browse_file, text_field)) if "OUTPUT_PATH" not in key else browse_button.clicked.connect(partial(self.browse_folder, text_field))
+
+            row_layout.addWidget(label)
+            row_layout.addWidget(text_field)
+            row_layout.addWidget(browse_button)
+
+            self.files_layout.addLayout(row_layout)
+
+        # Save button
+        save_button = QPushButton("Save")
+        save_button.clicked.connect(self.save_files)
+        self.files_layout.addWidget(save_button)
+
+        self.files_window.setLayout(self.files_layout)
+        self.files_window.show()
+
+    def browse_file(self, text_field):
+        options = QFileDialog.Options()
+        file_name, _ = QFileDialog.getOpenFileName(
+            self.files_window,
+            "Select File",
+            "",
+            "All Files (*);;Text Files (*.txt)",
+            options=options
+        )
+        if file_name:
+            text_field.setText(file_name)
+
+    def browse_folder(self, text_field):
+        folder_name = QFileDialog.getExistingDirectory(self.files_window, "Select Folder")
+        if folder_name:
+            text_field.setText(folder_name)
+
+    def save_files(self):
+        user_config = {}
+        for widget in self.files_window.findChildren(QLineEdit):
+            user_config[widget.objectName()] = widget.text()
+
+        try:
+            jsonSRW.write_json("__userfiles__\\user_config.json", user_config)
+            QMessageBox.information(self, "Success", "Preferences saved successfully.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save preferences: {e}")
+        finally:
+            self.files_window.close()
+    # Configuration Window        
+    def open_configuration_window(self):
+        self.preferences_window = QWidget()
+        self.preferences_window.setWindowTitle("Preferences")
+        self.preferences_layout = QVBoxLayout()
+
+        self.user_preferences = jsonSRW.read_json("__userfiles__\\user_preferences.json")
+
+        for key, value in self.user_preferences.items():
             label = QLabel(f"{key}:")
             text_field = QLineEdit(str(value))
             text_field.setObjectName(key)
@@ -92,14 +163,12 @@ class MainWindow(QMainWindow):
             user_config[widget.objectName()] = widget.text()
 
         try:
-            jsonSRW.write_json("__userfiles__\\user_config.json", user_config)
+            jsonSRW.write_json("__userfiles__\\user_preferences.json", user_config)
             QMessageBox.information(self, "Success", "Preferences saved successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save preferences: {e}")
         finally:
             self.preferences_window.close()
-    def open_configuration_window(self):
-        pass
     #endregion
 
     #region Tabs Implementations
@@ -211,12 +280,30 @@ class MainWindow(QMainWindow):
         self.endDate = QDateEdit()
         self.endDate.setCalendarPopup(True)
         self.endDate.setDate(QDate.currentDate().addDays(3))
+
+        # Radio buttons for "Dl." and "Dna."
+        self.mrRadioButton = QRadioButton("Dl.")
+        self.mrsRadioButton = QRadioButton("Dna.")
+        self.mrRadioButton.setChecked(True)
+        self.genderGroup = QButtonGroup()
+        self.genderGroup.addButton(self.mrRadioButton)
+        self.genderGroup.addButton(self.mrsRadioButton)
+
+        # FGO Title
+        self.facturaTitle = QTextEdit()
+        self.reload_factura_content()
+        self.facturaTitle.setText(self.factura_content)
         # Company fields to layout
         layout.addRow(QLabel("Nume Firmă:"), self.numeFirma)
         layout.addRow(QLabel("Adresă Firmă:"), self.adresaFirma)
         layout.addRow(QLabel("Firmă Reg.:"), self.firmaReg)
         layout.addRow(QLabel("Firmă CUI:"), self.firmaCUI)
         self.toggleCompanyFields(False)
+        # Gender layout
+        genderLayout = QVBoxLayout()
+        genderLayout.addWidget(self.mrRadioButton)
+        genderLayout.addWidget(self.mrsRadioButton)
+        layout.addRow(QLabel("Title:"), genderLayout)
         # Client fields to layout
         layout.addRow(QLabel("Nume Client:"), self.numeClient)
         layout.addRow(QLabel("Prenume Client:"), self.prenumClient)
@@ -243,6 +330,7 @@ class MainWindow(QMainWindow):
 
         layout.addRow(self.generateContract, self.refreshContent)
 
+        layout.addRow(self.facturaTitle)
         contracts_tab.setLayout(layout)
         self.tabs.addTab(contracts_tab, "Contracts")
     def toggleCompanyFields(self, checked):
@@ -355,9 +443,67 @@ class MainWindow(QMainWindow):
         html_output = self.html_replacer.process_template(processed_data.output)
         self.output_text_edit.setHtml(html_output)
     def generate_contract(self):
-        pass
+        # Check if any required fields are empty
+        required_fields = [
+
+            self.numeClient, self.prenumClient, self.adresaClient, self.serieCIClient,
+            self.nrCIClient, self.cnpClient, self.dataEmitereCI, self.emisCIDe,
+            self.seriaPermisClient, self.dataEmiterePermis, self.emisPermisDe,
+            self.telefonClient, self.autovanAles, self.nrNopti, self.tarifPerNoapte
+        ]
+        if self.companyCheckbox.isChecked():
+            required_fields.extend([self.numeFirma, self.adresaFirma, self.firmaReg, self.firmaCUI])
+
+        for field in required_fields:
+            if not field.text():
+                QMessageBox.warning(self, "Incomplete Fields", "Please fill in all required fields.")
+                return
+        self.user_preferences = jsonSRW.read_json("__userfiles__/user_preferences.json")
+        todayDate = datetime.now().strftime("%d.%m.%Y")
+        nrDoc = int(self.user_preferences["CONTRACT_NUMBER"]) + 1
+        self.user_preferences["CONTRACT_NUMBER"] = str(nrDoc)
+        jsonSRW.write_json("__userfiles__/user_preferences.json", self.user_preferences)
+        docData = {
+            "NrDoc": str(nrDoc),
+            "todayDate": todayDate,
+            "numeFirma": self.numeFirma.text(),
+            "adresaFirma": self.adresaFirma.text(),
+            "firmaReg": self.firmaReg.text(),
+            "firmaCUI": self.firmaCUI.text(),
+            "pronounClient": self.mrRadioButton.isChecked() and "Dl." or "Dna.",
+            "numeClient": self.numeClient.text(),
+            "prenumClient": self.prenumClient.text(),
+            "adresaClient": self.adresaClient.text(),
+            "serieCIClient": self.serieCIClient.text(),
+            "nrCIClient": self.nrCIClient.text(),
+            "cnpClient": self.cnpClient.text(),
+            "dataEmitereCI": self.dataEmitereCI.text(),
+            "emisCIDe": self.emisCIDe.text(),
+            "seriaPermisClient": self.seriaPermisClient.text(),
+            "dataEmiterePermis": self.dataEmiterePermis.text(),
+            "emisPermisDe": self.emisPermisDe.text(),
+            "telefonClient": self.telefonClient.text(),
+            "autovanAles": self.autovanAles.text(), #TODO: POPULATE FROM DATABASE COMBOBOX 
+            #TODO: Pickup and Dropoff Location
+            "nrNopti": self.nrNopti.text(),
+            "tarifPerNoapte": self.tarifPerNoapte.text(),
+            "startDate": self.startDate.date().toString("dd.MM.yyyy"),
+            "endDate": self.endDate.date().toString("dd.MM.yyyy")
+        }
+        self.docx_replacer.process_template(docData, self.companyCheckbox.isChecked())
+        QMessageBox.information(self, "Contract Generated", "Contract generated successfully.")
+        
+        # Read from "__userfiles__/factura.txt" and set the content to facturaTitle QTextEdit
+        self.reload_factura_content()
+        self.facturaTitle.setText(self.factura_content)
+    def reload_factura_content(self):
+        with open("__userfiles__/factura.txt", "r", encoding="utf-8") as file:
+            self.factura_content = file.read()
     def refresh_contract(self):
         # Assuming contract_tab has text fields that need to be reset
+        reply = QMessageBox.question(self, 'Confirmation', 'Are you sure you want to refresh the contract?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.No:
+            return
         contracts_tab = self.tabs.widget(1)  # Assuming the "Contracts" tab is the second tab
         for widget in contracts_tab.findChildren(QLineEdit):
             widget.clear()
@@ -367,6 +513,9 @@ class MainWindow(QMainWindow):
             widget.clear()
         for widget in contracts_tab.findChildren(QDateEdit):
             widget.setDate(QDate.currentDate())
+        self.reload_factura_content()
+        self.facturaTitle.setText(self.factura_content)
+        self.endDate.setDate(QDate.currentDate().addDays(3))
     #endregion
 
 if __name__ == "__main__":

@@ -35,16 +35,16 @@ class PeriodCalculator:
         autovanPriceStandard, autovanPriceHigh, autovanPriceLow = rates
         total_days = HighDays + StandardDays + LowDays
 
-        HighDiscount = 0.9 if total_days >= self.user_preferences["MIN_DAYS_HIGH"] else 1.0
-        StandardDiscount = 0.9 if total_days >= self.user_preferences["MIN_DAYS_STANDARD"] else 1.0
-        LowDiscount = 0.9 if total_days >= self.user_preferences["MIN_DAYS_LOW"] else 1.0
+        HighDiscount = 0.9 if total_days >= int(self.user_preferences["MIN_DAYS_HIGH"]) else 1.0
+        StandardDiscount = 0.9 if total_days >= int(self.user_preferences["MIN_DAYS_STANDARD"]) else 1.0
+        LowDiscount = 0.9 if total_days >= int(self.user_preferences["MIN_DAYS_LOW"]) else 1.0
         self.discount_rates = [StandardDiscount, HighDiscount, LowDiscount]
         self.season_rates = [autovanPriceStandard, autovanPriceHigh, autovanPriceLow]
         total_rent = (
             math.ceil(autovanPriceHigh  * HighDiscount) * HighDays +
             math.ceil(autovanPriceStandard * StandardDiscount) * StandardDays +
             math.ceil(autovanPriceLow * LowDiscount) * LowDays +
-            self.user_preferences["MAINTENANCE_COST"]
+            int(self.user_preferences["MAINTENANCE_COST"])
         )
         self.season_rates[0] = autovanPriceStandard if autovanPriceStandard * StandardDays != 0 else 0
         self.season_rates[1] = autovanPriceHigh if autovanPriceHigh * HighDays != 0 else 0

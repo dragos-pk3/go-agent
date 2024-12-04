@@ -1,13 +1,13 @@
 import json
 
-
 class HTMLReplacer:
     def __init__(self):
-        self.config = self.load_config()
+        self.config = self.load_config('__userfiles__/user_config.json')
         self.template_path = self.config['OFFER_TEMPLATE_PATH']
+        self.preferences = self.load_config('__userfiles__/user_preferences.json')
 
-    def load_config(self):
-        with open('__userfiles__/user_config.json', 'r') as f:
+    def load_config(self,path):
+        with open(path, 'r') as f:
             return json.load(f)
 
     def load_template(self):
@@ -21,6 +21,7 @@ class HTMLReplacer:
         return html_content
 
     def process_template(self, processed_data):
+        self.preferences = self.load_config('__userfiles__/user_preferences.json')
         docData = {
             'Autovan': str(processed_data['Autovan']),
             'Start Date': str(processed_data['Start Date']),
@@ -28,7 +29,8 @@ class HTMLReplacer:
             'Total Days': str(processed_data['Total Days']),
             'Location': str(processed_data['Location']),
             'Total Rent': str(int(processed_data['Total Rent'])),
-            'Link to Photo': str(processed_data['Link to Photo'])
+            'Link to Photo': str(processed_data['Link to Photo']),
+            'Taxa administrativa': str(int(self.preferences['MAINTENANCE_COST']))
         }
 
         template_content = self.load_template()
