@@ -16,20 +16,40 @@ class PeriodCalculator:
 
         HighDays = StandardDays = LowDays = 0
         current_date = start_date
-
+        if start_date > end_date:
+            end_date = end_date.replace(year=end_date.year + 1)
         while current_date < end_date:
             compare_date = current_date.replace(year=common_year)
-
-            if low_start <= compare_date or compare_date < low_end:
-                LowDays += 1
-            elif high_start <= compare_date < high_end:
-                HighDays += 1
+            if low_start <= low_end:
+                if low_start <= compare_date < low_end:
+                    LowDays += 1
+                elif high_start <= high_end:
+                    if high_start <= compare_date < high_end:
+                        HighDays += 1
+                    else:
+                        StandardDays += 1
+                else:
+                    if compare_date >= high_start or compare_date < high_end:
+                        HighDays += 1
+                    else:
+                        StandardDays += 1
             else:
-                StandardDays += 1
-
+                if compare_date >= low_start or compare_date < low_end:
+                    LowDays += 1
+                elif high_start <= high_end:
+                    if high_start <= compare_date < high_end:
+                        HighDays += 1
+                    else:
+                        StandardDays += 1
+                else:
+                    if compare_date >= high_start or compare_date < high_end:
+                        HighDays += 1
+                    else:
+                        StandardDays += 1
             current_date += timedelta(days=1)
 
         return HighDays, StandardDays, LowDays
+        
     def calculate_rent(self,HighDays, StandardDays, LowDays, rates):
         """Calculate total rent based on the season days."""
         autovanPriceStandard, autovanPriceHigh, autovanPriceLow = rates

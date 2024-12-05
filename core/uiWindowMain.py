@@ -233,7 +233,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(days_widget)
         self.autovan_combo_box = QComboBox(self)
         layout.addWidget(self.autovan_combo_box)
-        self.populate_autovan_combo_box()
+        self.populate_autovan_combo_box(self.autovan_combo_box)
 
         self.output_text_edit = QTextEdit(self)
         self.output_text_edit.setAcceptRichText(True)
@@ -271,7 +271,8 @@ class MainWindow(QMainWindow):
         self.dataEmiterePermis = QLineEdit()
         self.emisPermisDe = QLineEdit()
         self.telefonClient = QLineEdit()
-        self.autovanAles = QLineEdit()
+        self.autovanAles = QComboBox()
+        self.populate_autovan_combo_box(self.autovanAles)
         self.nrNopti = QLineEdit()
         self.tarifPerNoapte = QLineEdit()
         self.startDate = QDateEdit()
@@ -406,7 +407,7 @@ class MainWindow(QMainWindow):
     #endregion
 
     #region Implementations
-    def populate_autovan_combo_box(self):
+    def populate_autovan_combo_box(self,comboBox):
         data = jsonSRW.read_json("__userfiles__\\user_config.json")
         conn = sqlite3.connect(data["DATABASE_PATH"])
         cursor = conn.cursor()
@@ -420,7 +421,7 @@ class MainWindow(QMainWindow):
         
         rows = cursor.fetchall()
         for row in rows:
-            self.autovan_combo_box.addItem(f"{row[1]} - {row[2]}", row[0])
+            comboBox.addItem(f"{row[1]} - {row[2]}", row[0])
         conn.close()
 
     def generate_output(self):
@@ -449,7 +450,7 @@ class MainWindow(QMainWindow):
             self.numeClient, self.prenumClient, self.adresaClient, self.serieCIClient,
             self.nrCIClient, self.cnpClient, self.dataEmitereCI, self.emisCIDe,
             self.seriaPermisClient, self.dataEmiterePermis, self.emisPermisDe,
-            self.telefonClient, self.autovanAles, self.nrNopti, self.tarifPerNoapte
+            self.telefonClient, self.nrNopti, self.tarifPerNoapte
         ]
         if self.companyCheckbox.isChecked():
             required_fields.extend([self.numeFirma, self.adresaFirma, self.firmaReg, self.firmaCUI])
@@ -483,8 +484,8 @@ class MainWindow(QMainWindow):
             "dataEmiterePermis": self.dataEmiterePermis.text(),
             "emisPermisDe": self.emisPermisDe.text(),
             "telefonClient": self.telefonClient.text(),
-            "autovanAles": self.autovanAles.text(), #TODO: POPULATE FROM DATABASE COMBOBOX 
-            #TODO: Pickup and Dropoff Location
+            "autovanAles": self.autovanAles.currentText().split(" - ")[0],
+            "autovanLocation":self.autovanAles.currentText().split(" - ")[1],
             "nrNopti": self.nrNopti.text(),
             "tarifPerNoapte": self.tarifPerNoapte.text(),
             "startDate": self.startDate.date().toString("dd.MM.yyyy"),
