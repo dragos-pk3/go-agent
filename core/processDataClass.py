@@ -9,7 +9,7 @@ import jsonSRW
 
 class ProcessData:
     def __init__(self):
-        self.user_preferences = jsonSRW.read_json("__userfiles__\\user_preferences.json")
+        self.user_preferences = jsonSRW.read_json("_internal/__userfiles__/user_preferences.json")
         self.output = {}
     
     def process(self, autovanIndex, startDate:str, endDate:str):

@@ -3,9 +3,9 @@ import json
 
 class DocxReplace:
     def __init__(self):
-        self.user_config = self.read_json("__userfiles__/user_config.json")
+        self.user_config = self.read_json("_internal/__userfiles__/user_config.json")
         self.template_path = self.user_config["CONTRACT_TEMPLATE_PATH"]
-        self.user_preferences = self.read_json("__userfiles__/user_preferences.json")
+        self.user_preferences = self.read_json("_internal/__userfiles__/user_preferences.json")
 
 
     def read_json(self, file_path):
@@ -45,8 +45,8 @@ class DocxReplace:
         return input_string.replace('/', '-')
 
     def process_template(self, docData, isContractPJ):
-        self.user_config = self.read_json("__userfiles__/user_config.json")
-        self.user_preferences = self.read_json("__userfiles__/user_preferences.json")
+        self.user_config = self.read_json("_internal/__userfiles__/user_config.json")
+        self.user_preferences = self.read_json("_internal/__userfiles__/user_preferences.json")
         if isContractPJ:
             self.template_path = self.user_config["CONTRACT_PJ_TEMPLATE_PATH"]
         elif not isContractPJ:
@@ -63,7 +63,7 @@ class DocxReplace:
             filename = self.replace_slash_with_dash(f"{docData['NrDoc']} Contract {docData['numeClient']} {docData['prenumClient']}.docx")
 
         self.save_document(template, self.user_config["OUTPUT_PATH"], filename)
-        factura_file_path = "__userfiles__\\factura.txt"
+        factura_file_path = "_internal/__userfiles__/factura.txt"
         new_line = f"c/v conf. contract inchiriere nr. {docData['NrDoc']}/{docData['todayDate']} - inchiriere autorulota {docData['startDate'][:5]} - {docData['endDate']}"
 
         with open(factura_file_path, 'r+') as file:

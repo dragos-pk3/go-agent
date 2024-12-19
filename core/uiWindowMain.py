@@ -34,18 +34,21 @@ from datetime import datetime
 from processDataClass import ProcessData
 from docxReplace import DocxReplace
 from htmlReplace import HTMLReplacer
-icon_path = "__userfiles__\\rv.ico"
+icon_path = "_internal/__userfiles__/rv.ico"
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.html_replacer = HTMLReplacer()
         self.docx_replacer = DocxReplace()
-        self.setWindowTitle("GoCamper Oferte")
+        self.setWindowTitle("GoCamper Suite")
         self.setWindowIcon(QIcon(icon_path))
         self.init_menu()
         self.init_tabs()
-        self.user_preferences = jsonSRW.read_json("__userfiles__\\user_preferences.json")
+        self.user_preferences = jsonSRW.read_json("_internal/__userfiles__/user_preferences.json")
         self.reload_factura_content()
+        
+        # Move the window to the top-left corner of the screen
+        self.move(0, 0)
 
     def init_menu(self):
         menu_bar = self.menuBar()
@@ -67,7 +70,7 @@ class MainWindow(QMainWindow):
 
         self.create_offers_tab()
         self.create_contracts_tab()
-        self.create_procura_tab()
+        #self.create_procura_tab()
         self.create_db_tab()
         #TODO: Reservation Confirmation Tab
 
@@ -77,7 +80,7 @@ class MainWindow(QMainWindow):
         self.files_window.setWindowTitle("Files")
         self.files_layout = QVBoxLayout()
 
-        user_config = jsonSRW.read_json("__userfiles__\\user_config.json")
+        user_config = jsonSRW.read_json("_internal/__userfiles__/user_config.json")
 
         for key, value in user_config.items():
             row_layout = QHBoxLayout()
@@ -128,7 +131,7 @@ class MainWindow(QMainWindow):
             user_config[widget.objectName()] = widget.text()
 
         try:
-            jsonSRW.write_json("__userfiles__\\user_config.json", user_config)
+            jsonSRW.write_json("_internal/__userfiles__/user_config.json", user_config)
             QMessageBox.information(self, "Success", "Preferences saved successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save preferences: {e}")
@@ -140,7 +143,7 @@ class MainWindow(QMainWindow):
         self.preferences_window.setWindowTitle("Preferences")
         self.preferences_layout = QVBoxLayout()
 
-        self.user_preferences = jsonSRW.read_json("__userfiles__\\user_preferences.json")
+        self.user_preferences = jsonSRW.read_json("_internal/__userfiles__/user_preferences.json")
 
         for key, value in self.user_preferences.items():
             label = QLabel(f"{key}:")
@@ -163,7 +166,7 @@ class MainWindow(QMainWindow):
             user_config[widget.objectName()] = widget.text()
 
         try:
-            jsonSRW.write_json("__userfiles__\\user_preferences.json", user_config)
+            jsonSRW.write_json("_internal/__userfiles__/user_preferences.json", user_config)
             QMessageBox.information(self, "Success", "Preferences saved successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save preferences: {e}")
@@ -185,6 +188,7 @@ class MainWindow(QMainWindow):
         self.start_date_picker.setCalendarPopup(True)
         self.start_date_picker.setDate(QDate.currentDate())
         self.start_date_picker.setDisplayFormat("dd.MM")
+        self.start_date_picker.setFixedSize(120, 30)
         startDateLayout.addWidget(self.start_date_label)
         startDateLayout.addWidget(self.start_date_picker)
         startDateLayout.addItem(horizontal_spacer)
@@ -199,6 +203,7 @@ class MainWindow(QMainWindow):
         self.end_date_picker.setCalendarPopup(True)
         self.end_date_picker.setDate(QDate.currentDate().addDays(3))
         self.end_date_picker.setDisplayFormat("dd.MM")
+        self.end_date_picker.setFixedSize(120, 30)
         endDateLayout.addWidget(self.end_date_label)
         endDateLayout.addWidget(self.end_date_picker)
         endDateLayout.addItem(horizontal_spacer)
@@ -340,29 +345,41 @@ class MainWindow(QMainWindow):
         self.adresaFirma.setEnabled(checked)
         self.firmaReg.setEnabled(checked)
         self.firmaCUI.setEnabled(checked)
-    def create_procura_tab(self):
-        procura_tab = QWidget()
-        self.tabs.addTab(procura_tab, "Procura")
+    # def create_procura_tab(self):
+    #     procura_tab = QWidget()
+    #     self.tabs.addTab(procura_tab, "Procura")
     def create_db_tab(self):
         db_tab = QWidget()
-        db_path = "__userfiles__\\SQLGoCamper.db"  
+        db_path = "_internal/__userfiles__/SQLGoCamper.db"  
         self.connection = sqlite3.connect(db_path)
         
-        # Create layout for db_tab instead of main_widget
         layout = QVBoxLayout()
         db_tab.setLayout(layout)
         
-        # Add widgets to db_tab's layout, not self.layout
         self.table_selector = QComboBox()
         self.table_selector.currentIndexChanged.connect(self.display_table)
         layout.addWidget(self.table_selector)
         
-        # TableWidget to Display Table Contents
         self.table_widget = QTableWidget()
-        self.table_widget.setEditTriggers(QTableWidget.NoEditTriggers)
+        # Enable editing
+        self.table_widget.setEditTriggers(QTableWidget.AllEditTriggers)
         layout.addWidget(self.table_widget)
         
-        # Populate ComboBox with Table Names
+        # Add a button to insert a new row
+        self.add_row_button = QPushButton("Add New Row")
+        self.add_row_button.clicked.connect(self.add_new_row)
+        layout.addWidget(self.add_row_button)
+        
+        # Add a button to delete the selected row
+        self.delete_row_button = QPushButton("Delete Selected Row")
+        self.delete_row_button.clicked.connect(self.delete_selected_row)
+        layout.addWidget(self.delete_row_button)
+        
+        # Add a button to save changes to the database
+        self.save_changes_button = QPushButton("Save Changes")
+        self.save_changes_button.clicked.connect(self.save_changes_to_database)
+        layout.addWidget(self.save_changes_button)
+        
         self.populate_tables()
         self.tabs.addTab(db_tab, "DB")
     
@@ -400,6 +417,29 @@ class MainWindow(QMainWindow):
             except sqlite3.Error as e:
                 print(f"Error displaying table {table_name}: {e}")
 
+    def save_changes_to_database(self):
+        """Save all changes made in the table widget to the database."""
+        table_name = self.table_selector.currentText()
+        if table_name:
+            try:
+                cursor = self.connection.cursor()
+                for row in range(self.table_widget.rowCount()):
+                    primary_key_value = self.table_widget.item(row, 0).text()
+                    values = [self.table_widget.item(row, col).text() for col in range(self.table_widget.columnCount())]
+                    
+                    # Check if the row is new (i.e., primary key is empty)
+                    if not primary_key_value:
+                        placeholders = ', '.join(['?'] * len(values))
+                        cursor.execute(f"INSERT INTO [{table_name}] VALUES ({placeholders})", values)
+                    else:
+                        set_clause = ', '.join([f"{self.table_widget.horizontalHeaderItem(col).text()} = ?" for col in range(1, self.table_widget.columnCount())])
+                        cursor.execute(f"UPDATE [{table_name}] SET {set_clause} WHERE {self.table_widget.horizontalHeaderItem(0).text()} = ?", values[1:] + [primary_key_value])
+                
+                self.connection.commit()
+                QMessageBox.information(self, "Success", "Changes saved successfully.")
+            except sqlite3.Error as e:
+                QMessageBox.critical(self, "Error", f"Failed to save changes: {e}")
+
     def closeEvent(self, event):
         self.connection.close()
         super().closeEvent(event)
@@ -408,7 +448,7 @@ class MainWindow(QMainWindow):
 
     #region Implementations
     def populate_autovan_combo_box(self,comboBox):
-        data = jsonSRW.read_json("__userfiles__\\user_config.json")
+        data = jsonSRW.read_json("_internal/__userfiles__/user_config.json")
         conn = sqlite3.connect(data["DATABASE_PATH"])
         cursor = conn.cursor()
         
@@ -459,11 +499,11 @@ class MainWindow(QMainWindow):
             if not field.text():
                 QMessageBox.warning(self, "Incomplete Fields", "Please fill in all required fields.")
                 return
-        self.user_preferences = jsonSRW.read_json("__userfiles__/user_preferences.json")
+        self.user_preferences = jsonSRW.read_json("_internal/__userfiles__/user_preferences.json")
         todayDate = datetime.now().strftime("%d.%m.%Y")
         nrDoc = int(self.user_preferences["CONTRACT_NUMBER"]) + 1
         self.user_preferences["CONTRACT_NUMBER"] = str(nrDoc)
-        jsonSRW.write_json("__userfiles__/user_preferences.json", self.user_preferences)
+        jsonSRW.write_json("_internal/__userfiles__/user_preferences.json", self.user_preferences)
         docData = {
             "NrDoc": str(nrDoc),
             "todayDate": todayDate,
@@ -498,7 +538,7 @@ class MainWindow(QMainWindow):
         self.reload_factura_content()
         self.facturaTitle.setText(self.factura_content)
     def reload_factura_content(self):
-        with open("__userfiles__/factura.txt", "r", encoding="utf-8") as file:
+        with open("_internal/__userfiles__/factura.txt", "r", encoding="utf-8") as file:
             self.factura_content = file.read()
     def refresh_contract(self):
         # Assuming contract_tab has text fields that need to be reset
@@ -518,6 +558,41 @@ class MainWindow(QMainWindow):
         self.facturaTitle.setText(self.factura_content)
         self.endDate.setDate(QDate.currentDate().addDays(3))
     #endregion
+
+    def add_new_row(self):
+        """Add a new row to the table widget."""
+
+        # Insert the new row
+        current_row_count = self.table_widget.rowCount()
+        self.table_widget.insertRow(current_row_count)
+
+        # Optionally, set default values for the new row
+        for col in range(self.table_widget.columnCount()):
+            self.table_widget.setItem(current_row_count, col, QTableWidgetItem(""))
+
+
+    def delete_selected_row(self):
+        """Delete the selected row from the table and database."""
+        current_row = self.table_widget.currentRow()
+        if current_row < 0:
+            QMessageBox.warning(self, "No Selection", "Please select a row to delete.")
+            return
+
+        reply = QMessageBox.question(self, 'Confirmation', 'Are you sure you want to delete the selected row?', QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            table_name = self.table_selector.currentText()
+            primary_key_value = self.table_widget.item(current_row, 0).text()
+
+            if table_name and primary_key_value:
+                try:
+                    cursor = self.connection.cursor()
+                    # Assuming the first column is the primary key
+                    primary_key_column = self.table_widget.horizontalHeaderItem(0).text()
+                    cursor.execute(f"DELETE FROM [{table_name}] WHERE {primary_key_column} = ?", (primary_key_value,))
+                    self.connection.commit()
+                    self.table_widget.removeRow(current_row)
+                except sqlite3.Error as e:
+                    print(f"Error deleting row from database: {e}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
