@@ -34,7 +34,7 @@ from datetime import datetime
 from processDataClass import ProcessData
 from docxReplace import DocxReplace
 from htmlReplace import HTMLReplacer
-icon_path = "_internal/__userfiles__/rv.ico"
+icon_path = "__userfiles__/rv.ico"
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(icon_path))
         self.init_menu()
         self.init_tabs()
-        self.user_preferences = jsonSRW.read_json("_internal/__userfiles__/user_preferences.json")
+        self.user_preferences = jsonSRW.read_json("__userfiles__/user_preferences.json")
         self.reload_factura_content()
         
         # Move the window to the top-left corner of the screen
@@ -80,7 +80,7 @@ class MainWindow(QMainWindow):
         self.files_window.setWindowTitle("Files")
         self.files_layout = QVBoxLayout()
 
-        user_config = jsonSRW.read_json("_internal/__userfiles__/user_config.json")
+        user_config = jsonSRW.read_json("__userfiles__/user_config.json")
 
         for key, value in user_config.items():
             row_layout = QHBoxLayout()
@@ -131,7 +131,7 @@ class MainWindow(QMainWindow):
             user_config[widget.objectName()] = widget.text()
 
         try:
-            jsonSRW.write_json("_internal/__userfiles__/user_config.json", user_config)
+            jsonSRW.write_json("__userfiles__/user_config.json", user_config)
             QMessageBox.information(self, "Success", "Preferences saved successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save preferences: {e}")
@@ -143,7 +143,7 @@ class MainWindow(QMainWindow):
         self.preferences_window.setWindowTitle("Preferences")
         self.preferences_layout = QVBoxLayout()
 
-        self.user_preferences = jsonSRW.read_json("_internal/__userfiles__/user_preferences.json")
+        self.user_preferences = jsonSRW.read_json("__userfiles__/user_preferences.json")
 
         for key, value in self.user_preferences.items():
             label = QLabel(f"{key}:")
@@ -166,7 +166,7 @@ class MainWindow(QMainWindow):
             user_config[widget.objectName()] = widget.text()
 
         try:
-            jsonSRW.write_json("_internal/__userfiles__/user_preferences.json", user_config)
+            jsonSRW.write_json("__userfiles__/user_preferences.json", user_config)
             QMessageBox.information(self, "Success", "Preferences saved successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save preferences: {e}")
@@ -350,7 +350,7 @@ class MainWindow(QMainWindow):
     #     self.tabs.addTab(procura_tab, "Procura")
     def create_db_tab(self):
         db_tab = QWidget()
-        db_path = "_internal/__userfiles__/SQLGoCamper.db"  
+        db_path = "__userfiles__/SQLGoCamper.db"  
         self.connection = sqlite3.connect(db_path)
         
         layout = QVBoxLayout()
@@ -448,7 +448,7 @@ class MainWindow(QMainWindow):
 
     #region Implementations
     def populate_autovan_combo_box(self,comboBox):
-        data = jsonSRW.read_json("_internal/__userfiles__/user_config.json")
+        data = jsonSRW.read_json("__userfiles__/user_config.json")
         conn = sqlite3.connect(data["DATABASE_PATH"])
         cursor = conn.cursor()
         
@@ -499,11 +499,11 @@ class MainWindow(QMainWindow):
             if not field.text():
                 QMessageBox.warning(self, "Incomplete Fields", "Please fill in all required fields.")
                 return
-        self.user_preferences = jsonSRW.read_json("_internal/__userfiles__/user_preferences.json")
+        self.user_preferences = jsonSRW.read_json("__userfiles__/user_preferences.json")
         todayDate = datetime.now().strftime("%d.%m.%Y")
         nrDoc = int(self.user_preferences["CONTRACT_NUMBER"]) + 1
         self.user_preferences["CONTRACT_NUMBER"] = str(nrDoc)
-        jsonSRW.write_json("_internal/__userfiles__/user_preferences.json", self.user_preferences)
+        jsonSRW.write_json("__userfiles__/user_preferences.json", self.user_preferences)
         docData = {
             "NrDoc": str(nrDoc),
             "todayDate": todayDate,
@@ -538,7 +538,7 @@ class MainWindow(QMainWindow):
         self.reload_factura_content()
         self.facturaTitle.setText(self.factura_content)
     def reload_factura_content(self):
-        with open("_internal/__userfiles__/factura.txt", "r", encoding="utf-8") as file:
+        with open("__userfiles__/factura.txt", "r", encoding="utf-8") as file:
             self.factura_content = file.read()
     def refresh_contract(self):
         # Assuming contract_tab has text fields that need to be reset

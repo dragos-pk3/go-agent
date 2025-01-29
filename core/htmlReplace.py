@@ -3,9 +3,9 @@ import json
 
 class HTMLReplacer:
     def __init__(self):
-        self.config = self.load_config('_internal/__userfiles__/user_config.json')
+        self.config = self.load_config('__userfiles__/user_config.json')
         self.template_path = self.config['OFFER_TEMPLATE_PATH']
-        self.preferences = self.load_config('_internal/__userfiles__/user_preferences.json')
+        self.preferences = self.load_config('__userfiles__/user_preferences.json')
 
     def load_config(self, path):
         if not os.path.exists(path):
@@ -24,7 +24,7 @@ class HTMLReplacer:
         return html_content
 
     def process_template(self, processed_data):
-        self.preferences = self.load_config('_internal/__userfiles__/user_preferences.json')
+        self.preferences = self.load_config('__userfiles__/user_preferences.json')
         docData = {
             'Autovan': str(processed_data['Autovan']),
             'Start Date': str(processed_data['Start Date']),
